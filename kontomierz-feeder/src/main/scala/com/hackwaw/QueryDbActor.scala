@@ -10,6 +10,7 @@ case class Message()
 class QueryDbActor(syncActor: ActorRef) extends Actor {
 
   val kontomierzApiKey = "oF9Vwpo0QsJhOuu6fwHQuR7GjaRIBC9tHD2Bz15n98KbmZh89CCsPC663eGtVkCz"
+  val walletId = 591157L
 
   val mongoUri = MongoClientURI("mongodb://kontobit:izKSIIUNS87644@ds063929.mongolab.com:63929/kontobit")
 
@@ -26,16 +27,28 @@ class QueryDbActor(syncActor: ActorRef) extends Actor {
 
   def rowsFromTable(): Seq[UserAccount] = {
     val allDocs = col.find()
-    allDocs.map { doc =>
+    /*val docs = (for (doc <- allDocs) yield doc)
+*/
+    (for (doc <- allDocs) yield UserAccount(
+      doc.get("UserId").asInstanceOf[String],
+      doc.get("Name").asInstanceOf[String],
+      doc.get("Address").asInstanceOf[String],
+      kontomierzApiKey,
+      walletId,
+      doc.get("LastUpdate").asInstanceOf[Long]
+    )).toIndexedSeq
+
+  /*  docs.map { doc =>
+      println(doc)
       UserAccount(
         doc.get("UserId").asInstanceOf[String],
         doc.get("Name").asInstanceOf[String],
         doc.get("Address").asInstanceOf[String],
         kontomierzApiKey,
-        591157L,
+        walletId,
         doc.get("LastUpdate").asInstanceOf[Long]
       )
-    }.toSeq
+    }.toSeq*/
   }
 }
 
