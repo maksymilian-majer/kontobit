@@ -11,28 +11,14 @@ using Kontobit.Web.Models;
 namespace Kontobit.Web.Controllers
 {
     [Authorize]
-    public class ManageController : Controller
+    public class ManageController : KontobitControllerBase
     {
         public ManageController()
         {
         }
 
-        public ManageController(ApplicationUserManager userManager)
+        public ManageController(ApplicationUserManager userManager) : base (userManager)
         {
-            UserManager = userManager;
-        }
-
-        private ApplicationUserManager _userManager;
-        public ApplicationUserManager UserManager
-        {
-            get
-            {
-                return _userManager ?? HttpContext.GetOwinContext().GetUserManager<ApplicationUserManager>();
-            }
-            private set
-            {
-                _userManager = value;
-            }
         }
 
         //
