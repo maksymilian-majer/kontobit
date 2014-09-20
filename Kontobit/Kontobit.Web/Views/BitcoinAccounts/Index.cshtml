@@ -1,8 +1,152 @@
 ﻿@model Kontobit.Web.Controllers.BitcoinAccountModel
 
 @{
-    ViewBag.Title = "title";
-    Layout = "_Layout";
+    ViewBag.Title = "Konta Bitcoin";
 }
 
-<h2>title</h2>
+@section scripts
+{
+    <script language="javascript">
+        function BitcoinAccountModel(data) {
+            var self = this;
+
+            self.id = ko.observable(!data ? '' : data.Id);
+            self.name = ko.observable(!data ? '' : data.Name);
+            self.address = ko.observable(!data ? '' : data.Address);
+
+            self.new = ko.observable(data ? false : true);
+            self.edited = ko.observable(self.new());
+            self.deleted = ko.observable(false);
+
+            self.edit = function() {
+                self.edited(true);
+            };
+
+            self.remove = function() {
+                self.deleted(true);
+
+                if (self.new()) {
+                    return;
+                }
+
+                $.ajax('/BitcoinAccounts/Delete',
+                    {
+                        'method': 'post',
+                        'contentType': 'application/json; charset=utf-8',
+                        'dataType': 'json',
+                        'data': ko.toJSON(self)
+                    }
+                );
+            }
+
+            self.save = function() {
+                self.edited(false);
+                if (self.new()) {
+                    $.ajax('/BitcoinAccounts/Add',
+                        {
+                            'method': 'post',
+                            'contentType': 'application/json; charset=utf-8',
+                            'dataType': 'json',
+                            'data': ko.toJSON(self)
+                        }
+                    ).done(function(result) {
+                        self.id(result.Data.Id);
+                        self.new(false);
+                    });
+                    return;
+                }
+
+                $.ajax('/BitcoinAccounts/Update',
+                    {
+                        'method': 'post',
+                        'contentType': 'application/json; charset=utf-8',
+                        'dataType': 'json',
+                        'data': ko.toJSON(self)
+                    }
+                );
+            }
+        };
+
+        BitcoinAccountModel.prototype.toJSON = function() {
+            var copy = ko.toJS(this);
+            delete copy.new;
+            delete copy.edited;
+            delete copy.deleted;
+            return copy;
+        }
+
+        function AccountList() {
+            var self = this;
+
+            self.accounts = ko.observableArray([]);
+
+            self.visibleAccounts = ko.computed(function() {
+                return ko.utils.arrayFilter(self.accounts(), function(item) {
+                    return !item.deleted();
+                });
+            });
+
+            self.load = function() {
+                self.accounts.removeAll();
+                $.getJSON('/BitcoinAccounts/List', function(data) {
+                    var mapped = $.map(data, function(item) {
+                        return new BitcoinAccountModel(item);
+                    });
+
+                    ko.utils.arrayPushAll(self.accounts, mapped);
+                });
+            };
+
+            self.add = function() {
+                self.accounts.push(new BitcoinAccountModel());
+            }
+
+            self.load();
+        }
+
+        var accountList;
+        $(function() {
+            accountList = new AccountList();
+            ko.applyBindings(accountList);
+        });
+    </script>
+}
+
+<h2>Konta Bitcoin</h2>
+
+<!-- Table -->
+<table class="table">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Nazwa konta</th>
+            <th>Adres</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody data-bind="foreach: visibleAccounts">
+        <tr data-bind="visible: !edited()">
+            <td data-bind="text: $index() + 1"></td>
+            <td data-bind="text: name"></td>
+            <td data-bind="text: address"></td>
+            <td>
+                <a href="#" data-bind="click: edit">Edytuj</a>
+                &nbsp;
+                <a href="#" data-bind="click: remove">Usuń</a>
+            </td>
+        </tr>
+        <tr data-bind="visible: edited">
+            <td data-bind="text: $index() + 1"></td>
+            <td><input type="text" data-bind="value: name" /></td>
+            <td><input type="text" data-bind="value: address" /></td>
+            <td>
+                <a href="#" data-bind="click: save">Zapisz</a>&nbsp;
+                <a href="#" data-bind="click: remove">Usuń</a>
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+<p>
+    <a href="#" data-bind="click: add" class="btn btn-default">Dodaj</a>
+</p>

@@ -1,9 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Configuration;
-using System.Linq;
-using System.Web;
 using Kontobit.Web.Domain;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Builders;
 
@@ -30,6 +28,23 @@ namespace Kontobit.Web.Infrastructure.Repositories
         public IEnumerable<BitcoinAccount> GetAll()
         {
             return _accounts.FindAll();
+        }
+
+        public void Remove(ObjectId id)
+        {
+            var query = Query<BitcoinAccount>.EQ(e => e.Id, id);
+            _accounts.Remove(query);
+        }
+
+        public BitcoinAccount GetById(ObjectId id)
+        {
+            var query = Query<BitcoinAccount>.EQ(e => e.Id, id);
+            return _accounts.FindOne(query);
+        }
+
+        public void Save(BitcoinAccount account)
+        {
+            _accounts.Save(account);
         }
     }
 }

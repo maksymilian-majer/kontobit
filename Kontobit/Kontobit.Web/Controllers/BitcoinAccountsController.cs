@@ -27,10 +27,69 @@ namespace Kontobit.Web.Controllers
                 this.Response.StatusCode = 401;
                 return this.Json(new {Message = "Validation error"});
             }
-            var account = new BitcoinAccount(new Guid(User.Identity.GetUserId()), model.Name, model.Address);
+            var account = new BitcoinAccount(User.Identity.GetUserId(), model.Name, model.Address);
 
             var repository = new MongoDbBitcoinAccountRepository();
             repository.Add(account);
+
+            return Json(new {Message = "OK", Data = new BitcoinAccountModel
+            {
+                Id = account.Id.ToString(),
+                Address = account.Address,
+                Name = account.Name
+            } });
+        }
+
+        public ActionResult Update(BitcoinAccountModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                this.Response.StatusCode = 401;
+                return this.Json(new { Message = "Validation error" });
+            }
+
+            var repository = new MongoDbBitcoinAccountRepository();
+
+            ObjectId id;
+            if (!ObjectId.TryParse(model.Id, out id))
+            {
+                throw new ArgumentException();
+            }
+
+            var account = repository.GetById(id);
+
+            repository.Save(account);
+
+            return Json(new
+            {
+                Message = "OK",
+                Data = new BitcoinAccountModel
+                {
+                    Id = account.Id.ToString(),
+                    Address = account.Address,
+                    Name = account.Name
+                }
+            });
+        }
+        
+        public ActionResult Delete(BitcoinAccountModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                this.Response.StatusCode = 401;
+                return this.Json(new {Message = "Validation error"});
+            }
+
+            var account = new BitcoinAccount(User.Identity.GetUserId(), model.Name, model.Address);
+
+            var repository = new MongoDbBitcoinAccountRepository();
+            ObjectId id;
+            if (!ObjectId.TryParse(model.Id, out id))
+            {
+                throw new ArgumentException();
+            }
+            
+            repository.Remove(id);
 
             return Json(new {Message = "OK", Data = account });
         }
